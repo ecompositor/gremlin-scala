@@ -9,6 +9,20 @@ import com.tinkerpop.gremlin.process._
 import java.util.Comparator
 import java.util.function.Predicate
 
+//TODO remove me?
+trait ConvertMaybe[From, To] {
+  def convert(from: From): To
+}
+
+object crazy {
+  implicit object scalaVertex extends ConvertMaybe[Vertex, ScalaVertex] {
+    override def convert(v: Vertex) = ScalaVertex(v)
+  }
+  implicit def anyConvert[A, B] = new ConvertMaybe[A, B] {
+    override def convert(a: A) = a.asInstanceOf[B]
+  }
+}
+
 case class GremlinScala[Types <: HList, End](traversal: Traversal[_, End]) {
   def toList(): List[End] = traversal.toList.toList
   def toSet(): Set[End] = traversal.toList.toSet
@@ -41,6 +55,18 @@ case class GremlinScala[Types <: HList, End](traversal: Traversal[_, End]) {
 
   def filter(p: End => Boolean) = GremlinScala[Types, End](traversal.filter(new Predicate[Holder[End]] {
     override def test(h: Holder[End]): Boolean = p(h.get)
+  }))
+
+  //TODO: other idea: always store Vertex as ScalaVertex in Types, and convert only if needed:
+  //  toList, filter etc.
+  def filterBlub[A](p: End => Boolean)(implicit ev: ConvertMaybe[A, End])
+  = GremlinScala[Types, End](traversal.filter(new Predicate[Holder[End]] {
+    override def test(h: Holder[End]): Boolean = {
+      //TODO: can I factor that out?
+      val x: A = h.get.asInstanceOf[A] //it's actually an A, so just cast it ;)
+      val v: End = ev.convert(x)
+      p(v)
+    }
   }))
 
   def dedup() = GremlinScala[Types, End](traversal.dedup())
@@ -80,10 +106,14 @@ case class ScalaGraph(graph: Graph) {
   def V() = GremlinScala[Vertex :: HNil, Vertex](graph.V.asInstanceOf[Traversal[_, Vertex]])
   /** get all edges */
   def E() = GremlinScala[Edge :: HNil, Edge](graph.E.asInstanceOf[Traversal[_, Edge]])
+
+  //TODO remove me
+  def V2() = GremlinScala[ScalaVertex :: HNil, ScalaVertex](graph.V.asInstanceOf[Traversal[_, ScalaVertex]])
 }
 
 trait ScalaElement {
   def element: Element
+  def scala: ScalaElement
 
   def id: AnyRef = element.getId
 
@@ -109,6 +139,10 @@ trait ScalaElement {
 
 case class ScalaVertex(vertex: Vertex) extends ScalaElement {
   override def element = vertex
+  override def scala: ScalaVertex = this
+
+  //TODO remove me
+  def scalaOnlyMethod: Boolean = true
 
   def out() = GremlinScala[Vertex :: Vertex :: HNil, Vertex](vertex.out())
   def out(labels: String*) = GremlinScala[Vertex :: Vertex :: HNil, Vertex](vertex.out(labels: _*))
@@ -143,6 +177,7 @@ case class ScalaVertex(vertex: Vertex) extends ScalaElement {
 
 case class ScalaEdge(edge: Edge) extends ScalaElement {
   override def element = edge
+  override def scala: ScalaEdge = this
 
   def label(): String = edge.getLabel
 

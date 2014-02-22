@@ -19,10 +19,3 @@ import ElementSpecific._
   //def getEdges(direction: Direction, labels: String*): JIterable[Edge] = vertex.getEdges(direction, labels: _*)
   //def getVertices(direction: Direction, labels: String*): JIterable[Vertex] = vertex.getVertices(direction, labels: _*)
 //}
-
-/**Implicit conversions between Vertex and ScalaVertex */
-object ScalaVertex {
-  def apply(vertex: Vertex) = wrap(vertex)
-  implicit def wrap(vertex: Vertex) = new ScalaVertex(vertex)
-  implicit def unwrap(wrapper: ScalaVertex) = wrapper.vertex
-}

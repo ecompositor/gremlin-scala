@@ -8,8 +8,8 @@ import org.scalatest.FunSpec
 trait TestGraph {
   val graph = TinkerFactory.createClassic()
   def gs: ScalaGraph = GremlinScala.of(graph)
-  def v(i: Int) = gs.v(i:Integer).get
-  def e(i: Int) = gs.e(i:Integer).get
+  def v(i: Int): ScalaVertex = gs.v(i:Integer).get
+  def e(i: Int): ScalaEdge = gs.e(i:Integer).get
 
   def print(gs: GremlinScala[_,_]) = println(gs.toList)
 }

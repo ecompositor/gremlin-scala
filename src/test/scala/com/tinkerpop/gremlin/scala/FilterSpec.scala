@@ -4,11 +4,32 @@ import org.scalatest.matchers.ShouldMatchers
 
 class FilterSpec extends TestBase {
 
-  it("filters") {
-    //TODO: always convert to ScalaVertex/Edge where possible?
-    gs.V
-      .filter { v: Vertex => ScalaVertex(v).value("age", default = 0) > 30 }
-      .value[String]("name").toSet should be(Set("josh", "peter"))
+  describe("filter") {
+    it("filters by name") {
+
+      //TODO: try to simply cast it when creating VertexSteps
+      //problem: tinkervertex cannot be cast to ScalaVertex, we have to convert it first
+      //import shapeless._
+      //val g = gs.V.asInstanceOf[GremlinScala[ScalaVertex :: HNil, ScalaVertex]]
+      //g.filter{v: ScalaVertex => true}.toList foreach println
+
+      //gs.V.value[String]("name").toList foreach println
+      //gs.V.filter{ v: Vertex =>
+        ////TODO: find out why v.value creates a new pipeline - does vertex/element have it?
+        //println(v.value[String]("name"))
+        //println(v.scala.value[String]("name"))
+        //v.value[String]("name") == "marko"}.toList foreach println
+      //gs.V.filter(_.value[String]("name") == "marko")
+        //.value[String]("name").toList should be("marko")
+    }
+
+    it("filters with default value") {
+      //TODO: always convert to ScalaVertex/Edge where possible?
+      gs.V
+        .filter { v: Vertex => ScalaVertex(v).value("age", default = 0) > 30 }
+        //.filter(_.value("age", default = 0) > 30)
+        .value[String]("name").toSet should be(Set("josh", "peter"))
+    }
   }
 
   describe("dedup") {
